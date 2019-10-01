@@ -8,8 +8,9 @@ class TestMathLib(unittest.TestCase):
 
     def test_boxplot_out_file_type(self):
         L = [4, 6, 5, 9, 10, 3, 9]
+        x_ticks = "sample1"
         with self.assertRaises(ValueError) as ex:
-            dv.boxplot(L, 'test.jpeg')
+            dv.boxplot('test.jpeg', 'title', 'x_axis', 'y_axis', L, x_ticks)
         message = 'Can not support file extension. Try .png instead'
         self.assertEqual(str(ex.exception), message)
 
