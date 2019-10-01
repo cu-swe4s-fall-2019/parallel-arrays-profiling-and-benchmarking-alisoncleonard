@@ -8,6 +8,8 @@ def binary_serach(key, L):
 
 
 def main():
+    pass
+
 
 
 if __name__ == '__main__':
