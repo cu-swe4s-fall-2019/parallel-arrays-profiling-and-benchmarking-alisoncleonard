@@ -15,3 +15,4 @@ before_install:
 script:
     - python data_viz.py
     - python test_data_viz.py
+    - python plot_gtex.py
