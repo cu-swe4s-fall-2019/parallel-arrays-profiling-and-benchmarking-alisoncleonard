@@ -5,24 +5,17 @@ import time
 import argparse
 
 
-def linear_search_by_line(key, L):
+def linear_search(key, L):
     """
     When iterating through a for loop, returns the index of the key if the
     key is in the list
     """
-    for i in range(len(L)):
-        if key == L[i]:
+    hit = -1
+    for i  in range(len(L)):
+        curr =  L[i]
+        if key == curr:
             return i
-
-def linear_search(key, L):
-    """
-    returns a list containing all indices where the key occurs
-    """
-    hit = []
-    for i in range(len(L)):
-        if key == L[i]:
-            hit.append(i)
-    return hit
+    return -1
 
 
 def binary_serach(key, L):
@@ -41,7 +34,7 @@ def main():
     # our sample info: 'GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt'
     # if you want to read normally, try opening as excel file, specify txt is tab delineated
 
-    #python plot_gtex.py --gene_reads_file 'GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads.acmg_59.gct.gz' --sample_info_file 'GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt' --group_data_by 'SMTS' --target_gene 'ACTA2' --output_file_name 'ACTA2_graph'
+    #python plot_gtex.py --gene_reads_file 'GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads.acmg_59.gct.gz' --sample_info_file 'GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt' --group_data_by 'SMTS' --target_gene 'ACTA2' --output_file_name '_test_plot.png'
 
     parser = argparse.ArgumentParser(description= 'plot gene expression data '
                                     'from gtex files', prog='plot_gtex.py')
@@ -71,47 +64,52 @@ def main():
 
     # plot gene expression across either tissue groups (SMTS) or tissue types (SMTSD)
     # choice stored in variable 'tissue_selection'
-    data_group = args.group_data_by
+    group_col_name = args.group_data_by
 
     # gene of interest to plot
     gene_name = args.target_gene
 
-    sample_id_data = []
-    sample_info = None
+    # pull sample id numbers
+    sample_id_col_name = 'SAMPID'
 
-    for l in open(sample_info_file_name, 'r'):
-        if sample_info == None:
-            sample_info = l.rstrip().split('\t')
-            continue
+    samples = []
+    sample_info_header = None
+    for l in open(sample_info_file_name):
+        if sample_info_header == None:
+            sample_info_header = l.rstrip().split('\t')
+        else:
+            samples.append(l.rstrip().split('\t'))
 
-            data_group_idx = linear_search_by_line(data_group, sample_info)
-            sample_id_idx = linear_search_by_line('SAMPID', sample_info)
+    # linear search to find indices of target group in sample_info_header
+    group_col_idx = linear_search(group_col_name, sample_info_header)
+    # linear search to pull sample id indices from sample_info_header
+    sample_id_col_idx = linear_search(sample_id_col_name, sample_info_header)
 
-            sample_id_data.append(sample_info[sample_id_idx])
+    groups = [] # pull list of sample names, use as xtick labels when plotting
+    members = []
 
-    print(sample_id_data)
+    for row_idx in range(len(samples)):
+        sample = samples[row_idx]
+        # check if could pull list of sample names from here
+        sample_name = sample[sample_id_col_idx]
+        curr_group = sample[group_col_idx]
 
+        curr_group_idx = linear_search(curr_group, groups)
 
-            #sample_IDs.append(l.rstrip().split('\t'))
+        if curr_group_idx == -1:
+            curr_group_idx = len(groups)
+            groups.append(curr_group)
+            members.append([])
 
-    # linear search for tissue data type (SMTS or SMTSD) in sample_info_header
-    # returns list of all indices with that column name
-    #data_type_idx = linear_search(tissue_data_type, sample_info_header)
-
-
-
-
-
-
-    #print(sample_IDs)
-    #print(sample_info_header)
-    #print(sample_id_idx)
-
+        members[curr_group_idx].append(sample_name)
 
     version = None
     dim = None
-    rna_header = None
+    data_header = None
 
+    gene_name_col = 1
+
+    group_counts = [ [] for i in range(len(groups)) ]
 
     for l in gzip.open(data_file_name, 'rt'):
         if version == None:
@@ -122,43 +120,36 @@ def main():
             dim = [int(x) for x in l.rstrip().split()]
             continue
 
-        if rna_header == None:
-            rna_header = l.rstrip().split('\t')
+        if data_header == None:
+            data_header = l.rstrip().split('\t')
             continue
 
-        # sorting list array for binary search
-        # data_header_plus_index = []
-        # for i in rangle(len(data_header)):
-        #     # first position in pair has value, second has its old position
-        #     # for use in binary search
-        #     data_header_plus_index.append(data_header[i], i)
+        A = l.rstrip().split('\t')
 
-        rna_counts = l.rstrip().split('\t')
-
-        # do we need to look for all types of tissue and plat each one?
-        description_idx = linear_search('Description', rna_header)
-
-        # test that description is in header
-        if description_idx == -1:
-            sys.exit('Description not found in header')
-        # description is too generic - we need the actual sample types (example blood,
-        # brain) to get the rna counts for each sample type
-        # the sample names will be in the sample data spreadsheet - extract along with index?
-        #if rna_counts[Description]
+        if A[gene_name_col] == gene_name:
+            for group_idx in range(len(groups)):
+                for member in members[group_idx]:
+                    member_idx = linear_search(member, data_header)
+                    if member_idx != -1:
+                        group_counts[group_idx].append(int(A[member_idx]))
+            break
 
 
+    # ploting with data_viz.py module
+    # code will output a list of lists containing gene data for a specific tissue type,
+    # and a list of names corresponding to each list of data to box plot
+
+    plot_name = str(gene_name) + str(args.output_file_name)
+    plot_title = str(gene_name) + "_plot"
+    x_axis_label = group_col_name
+    y_axis_label = "Gene read counts"
+    data = group_counts
+    x_ticks = groups
+
+    data_viz.boxplot(plot_name, plot_title, x_axis_label, y_axis_label, data, x_ticks)
 
 
 
-        # code will output a list of lists containing gene data for a specific tissue type,
-        # and a list of names corresponding to each list of data to box plot
-
-        #plot_name = args.output_file_name
-        # plot_tile = str(gene_name) + "_plot.png"
-        # x_axis_label = tissue_data_type
-        # y_axis_label = "Gene read counts"
-        #
-        # boxplot(plot_name, plot_title, x_axis_label, y_axis_label, lists, x_ticks)
 
 
 
