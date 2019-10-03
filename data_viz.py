@@ -57,7 +57,7 @@ def boxplot(out_file_name, title, x_axis, y_axis, lists, x_ticks):
         data_to_plot = lists
         sample_labels = x_ticks
 
-        width = 3
+        width = 10
         height = 3
 
         fig = plt.figure(figsize=(width, height), dpi=300)
@@ -67,6 +67,7 @@ def boxplot(out_file_name, title, x_axis, y_axis, lists, x_ticks):
         ax.set_title(figure_title)
         # set custom labels with the names of each list
         ax.set_xticklabels(sample_labels)
+        plt.xticks(rotation=90)
         ax.set_xlabel(figure_xaxis)
         ax.set_ylabel(figure_yaxis)
 
