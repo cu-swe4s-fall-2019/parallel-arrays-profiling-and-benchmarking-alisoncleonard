@@ -118,10 +118,17 @@ def main():
 
     args = parser.parse_args()
 
-    # file with gene read counts for each sample
-    data_file_name = args.gene_reads_file
-    # file with informational headers for each sample
-    sample_info_file_name = args.sample_info_file
+    try:
+        # file with gene read counts for each sample
+        data_file_name = args.gene_reads_file
+        # file with informational headers for each sample
+        sample_info_file_name = args.sample_info_file
+    except FileNotFoundError:
+        print('Could not find input data file')
+        sys.exit(1)
+    except PermissionError:
+        print('Could not open input data file')
+        sys.exit(1)
 
     # plot gene expression of tissue groups (SMTS) or tissue types (SMTSD)
     # choice stored in variable 'tissue_selection'
