@@ -39,6 +39,9 @@ For example:
 ```
 $ python plot_gtex.py --gene_reads_file 'GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_reads.acmg_59.gct.gz' --sample_info_file 'GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt' --group_data_by 'SMTS' --target_gene 'ACTA2' --output_file_name 'ACTA2_plot.png'
 ```
+gives this output plot:
+![](ACTA2_plot.png)
+
 
 ## How to Install
 
@@ -77,4 +80,4 @@ GNU time with binary search:
 8.28 elapsed time in second     170040 maximum memory usage in kilobytes
 
 This demonstrates that using binary search is faster and more efficient than
-linear search. 
+linear search.
