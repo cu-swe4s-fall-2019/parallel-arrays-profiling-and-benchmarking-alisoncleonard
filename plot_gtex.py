@@ -32,7 +32,7 @@ def linear_search(key, L):
     return -1
 
 
-def binary_serach(key, D):
+def binary_search(key, D):
     """Searches a list for a key using the binary search method
 
     Parameters
@@ -49,6 +49,8 @@ def binary_serach(key, D):
 
     lo = -1
     hi = len(D)
+    print(lo)
+    print(hi)
     while (hi - lo > 1):
         mid = (hi + lo) // 2
 
@@ -196,7 +198,7 @@ def main():
         if A[gene_name_col] == gene_name:
             for group_idx in range(len(groups)):
                 for member in members[group_idx]:
-                    member_idx = binary_serach(member, data_header)
+                    member_idx = binary_search(member, data_header)
                     if member_idx != -1:
                         group_counts[group_idx].append(int(A[member_idx]))
             break
