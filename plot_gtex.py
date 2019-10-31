@@ -8,7 +8,9 @@ import gzip
 import sys
 import time
 import argparse
-
+import importlib
+sys.path.insert(1, './hash-tables-alisoncleonard')
+import hash_tables as ht
 
 def linear_search(key, L):
     """Searches a list for a key using the linear search method
@@ -140,92 +142,110 @@ def main():
     # pull sample id numbers
     sample_id_col_name = 'SAMPID'
 
-    samples = []
+    #tissue_to_samples_map = hash_table_module.hash_tables.ChainedHash(1000000, #hash_functions.h_rolling)
+    #print(tissue_to_samples_map)
+
     sample_info_header = None
     for l in open(sample_info_file_name):
-        if sample_info_header is None:
-            sample_info_header = l.rstrip().split('\t')
-        else:
-            samples.append(l.rstrip().split('\t'))
+        line_split = l.rstrip().split('\t')
+        print(line_split[0], line_split[5], line_split[6])
+    #     if sample_info_header is None:
+    #         sample_info_header = l.rstrip().split('\t')
+    #     else:
+    #
+    #         samples.append(l.rstrip().split('\t'))
 
-    # linear search to find indices of target group in sample_info_header
-    group_col_idx = linear_search(group_col_name, sample_info_header)
-    # linear search to pull sample id indices from sample_info_header
-    sample_id_col_idx = linear_search(sample_id_col_name, sample_info_header)
+    # in new hash table, key SAMPID is from column 0, SMTS column 5, SMTSD column 6
 
-    groups = []  # pull list of sample names, use as xtick labels when plotting
-    members = []
+    # data = read_file(sample_info_file_name, ['SAMPID', 'SMTS', 'SMTSD'])
+    # print(data)
 
-    for row_idx in range(len(samples)):
-        sample = samples[row_idx]
-        # check if could pull list of sample names from here
-        sample_name = sample[sample_id_col_idx]
-        curr_group = sample[group_col_idx]
+    # for d in data: # data = ['SAMPID', 'SMTS', 'SMTSD']
+    #     if group_col_name is 'SMTS':
+    #         hit = tissue_to_samples_map.search(d[1])
+    #     if group_col_name is 'SMTSD':
+    #         hit = tissue_to_samples_map.search(d[2])
+    #     tissue_to_samples_map.
 
-        curr_group_idx = linear_search(curr_group, groups)
 
-        if curr_group_idx == -1:
-            curr_group_idx = len(groups)
-            groups.append(curr_group)
-            members.append([])
-
-        members[curr_group_idx].append(sample_name)
-
-    version = None
-    dim = None
-    data_header = None
-
-    gene_name_col = 1
-
-    group_counts = [[] for i in range(len(groups))]
-
-    for l in gzip.open(data_file_name, 'rt'):  # 'rt' needed for gzip file
-        if version is None:
-            version = l
-            continue
-
-        if dim is None:
-            dim = [int(x) for x in l.rstrip().split()]
-            continue
-
-        t0_sort = time.time()
-        if data_header is None:
-            data_header = []
-            i = 0
-            for field in l.rstrip().split('\t'):
-                data_header.append([field, i])
-                i += 1
-            data_header.sort(key=lambda tup: tup[0])
-            continue
-        t1_sort = time.time()
-
-        A = l.rstrip().split('\t')
-
-        t0_search = time.time()
-        if A[gene_name_col] == gene_name:
-            for group_idx in range(len(groups)):
-                for member in members[group_idx]:
-                    member_idx = binary_search(member, data_header)
-                    if member_idx != -1:
-                        group_counts[group_idx].append(int(A[member_idx]))
-            break
-        t1_search = time.time()
-
-    sort_time = t1_sort - t0_sort
-    search_time = t1_search - t0_search
+    # # linear search to find indices of target group in sample_info_header
+    # group_col_idx = linear_search(group_col_name, sample_info_header)
+    # # linear search to pull sample id indices from sample_info_header
+    # sample_id_col_idx = linear_search(sample_id_col_name, sample_info_header)
+    #
+    # groups = []  # pull list of sample names, use as xtick labels when plotting
+    # members = []
+    #
+    # for row_idx in range(len(samples)):
+    #     sample = samples[row_idx]
+    #     # check if could pull list of sample names from here
+    #     sample_name = sample[sample_id_col_idx]
+    #     curr_group = sample[group_col_idx]
+    #
+    #     curr_group_idx = linear_search(curr_group, groups)
+    #
+    #     if curr_group_idx == -1:
+    #         curr_group_idx = len(groups)
+    #         groups.append(curr_group)
+    #         members.append([])
+    #
+    #     members[curr_group_idx].append(sample_name)
+    #
+    # version = None
+    # dim = None
+    # data_header = None
+    #
+    # gene_name_col = 1
+    #
+    # group_counts = [[] for i in range(len(groups))]
+    #
+    # for l in gzip.open(data_file_name, 'rt'):  # 'rt' needed for gzip file
+    #     if version is None:
+    #         version = l
+    #         continue
+    #
+    #     if dim is None:
+    #         dim = [int(x) for x in l.rstrip().split()]
+    #         continue
+    #
+    #     t0_sort = time.time()
+    #     if data_header is None:
+    #         data_header = []
+    #         i = 0
+    #         for field in l.rstrip().split('\t'):
+    #             data_header.append([field, i])
+    #             i += 1
+    #         data_header.sort(key=lambda tup: tup[0])
+    #         continue
+    #     t1_sort = time.time()
+    #
+    #     A = l.rstrip().split('\t')
+    #
+    #     t0_search = time.time()
+    #     if A[gene_name_col] == gene_name:
+    #         for group_idx in range(len(groups)):
+    #             for member in members[group_idx]:
+    #                 member_idx = binary_search(member, data_header)
+    #                 if member_idx != -1:
+    #                     group_counts[group_idx].append(int(A[member_idx]))
+    #         break
+    #     t1_search = time.time()
+    #
+    # sort_time = t1_sort - t0_sort
+    # search_time = t1_search - t0_search
 
     # ploting with data_viz.py module
     # code will output a list of lists containing gene data for tissue type,
     # and a list of names corresponding to each list of data to box plot
 
-    saved_plot_name = args.output_file_name
-    title = str(gene_name)
-    x_label = group_col_name
-    y_label = "Gene read counts"
-    data = group_counts
-    x_ticks = groups
-
-    data_viz.boxplot(saved_plot_name, title, x_label, y_label, data, x_ticks)
+    # saved_plot_name = args.output_file_name
+    # title = str(gene_name)
+    # x_label = group_col_name
+    # y_label = "Gene read counts"
+    # data = group_counts
+    # x_ticks = groups
+    #
+    # data_viz.boxplot(saved_plot_name, title, x_label, y_label, data, x_ticks)
 
 
 if __name__ == '__main__':
