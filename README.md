@@ -1,5 +1,5 @@
-# parallel-arrays-profiling-and-benchmarking
-Homework 4: Parallel Arrays, Profiling, and Benchmarking
+# Using the hash tables submodule to store and plot GTEx data
+Homework 8: Submodules
 
 This tool plots gene expression data collected by the Genotype-Tissue-Expression
 (GTEx) project, a ongoing effort to build a comprehensive public database to
@@ -52,6 +52,7 @@ $ python plot_gtex.py --gene_reads_file 'GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1
     - conda install -y pycodestyle
     - conda install --yes python=3.6
     - conda install -y matplotlib
+    - git submodule update --init
 
 ## Summary of Profiling and Benchmarking Results
 

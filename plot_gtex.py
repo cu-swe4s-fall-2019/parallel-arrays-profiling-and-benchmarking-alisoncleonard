@@ -8,7 +8,9 @@ import gzip
 import sys
 import time
 import argparse
-
+import importlib
+sys.path.insert(1, './hash-tables-alisoncleonard')
+import hash_tables as ht
 
 def linear_search(key, L):
     """Searches a list for a key using the linear search method
@@ -137,39 +139,7 @@ def main():
     # gene of interest to plot
     gene_name = args.target_gene
 
-    # pull sample id numbers
-    sample_id_col_name = 'SAMPID'
-
-    samples = []
-    sample_info_header = None
-    for l in open(sample_info_file_name):
-        if sample_info_header is None:
-            sample_info_header = l.rstrip().split('\t')
-        else:
-            samples.append(l.rstrip().split('\t'))
-
-    # linear search to find indices of target group in sample_info_header
-    group_col_idx = linear_search(group_col_name, sample_info_header)
-    # linear search to pull sample id indices from sample_info_header
-    sample_id_col_idx = linear_search(sample_id_col_name, sample_info_header)
-
-    groups = []  # pull list of sample names, use as xtick labels when plotting
-    members = []
-
-    for row_idx in range(len(samples)):
-        sample = samples[row_idx]
-        # check if could pull list of sample names from here
-        sample_name = sample[sample_id_col_idx]
-        curr_group = sample[group_col_idx]
-
-        curr_group_idx = linear_search(curr_group, groups)
-
-        if curr_group_idx == -1:
-            curr_group_idx = len(groups)
-            groups.append(curr_group)
-            members.append([])
-
-        members[curr_group_idx].append(sample_name)
+    sample_to_count_map = ht.ChainedHash(1000000, ht.hash_functions.h_rolling)
 
     version = None
     dim = None
@@ -177,42 +147,59 @@ def main():
 
     gene_name_col = 1
 
-    group_counts = [[] for i in range(len(groups))]
+    for l in gzip.open(data_file_name, 'rt'):
 
-    for l in gzip.open(data_file_name, 'rt'):  # 'rt' needed for gzip file
-        if version is None:
+        if version == None:
             version = l
             continue
 
-        if dim is None:
+        if dim == None:
             dim = [int(x) for x in l.rstrip().split()]
             continue
 
-        t0_sort = time.time()
-        if data_header is None:
-            data_header = []
-            i = 0
-            for field in l.rstrip().split('\t'):
-                data_header.append([field, i])
-                i += 1
-            data_header.sort(key=lambda tup: tup[0])
+        if data_header == None:
+            data_header = l.rstrip().split('\t')
             continue
-        t1_sort = time.time()
+
+        # remove first and second items from list (not sample ids)
+        data_header.pop(0)
+        data_header.pop(0)
+        sample_ids = data_header
 
         A = l.rstrip().split('\t')
+        print(A[gene_name_col])
 
-        t0_search = time.time()
-        if A[gene_name_col] == gene_name:
-            for group_idx in range(len(groups)):
-                for member in members[group_idx]:
-                    member_idx = binary_search(member, data_header)
-                    if member_idx != -1:
-                        group_counts[group_idx].append(int(A[member_idx]))
-            break
-        t1_search = time.time()
+        for sample_i in range(len(sample_ids)):
+            if A[gene_name_col] == gene_name:
+                sample_to_count_map.add(sample_ids[sample_i], A[sample_i])
 
-    sort_time = t1_sort - t0_sort
-    search_time = t1_search - t0_search
+    samples_to_tissues_map = ht.ChainedHash(1000000, ht.hash_functions.h_rolling)
+
+    # in new hash table, SAMPID is from column 0, SMTS column 5, SMTSD column
+
+    tissues_list = []
+
+    for l in open(sample_info_file_name):
+        line_split = l.rstrip().split('\t')
+        if group_col_name == 'SMTS':
+            if line_split[5] not in tissues_list:
+                tissues_list.append(line_split[5])
+            samples_to_tissues_map.add(line_split[0], line_split[5])
+        if group_col_name == 'SMTSD':
+            if line_split[5] not in tissues_list:
+                tissues_list.append(line_split[5])
+            samples_to_tissues_map.add(line_split[0], line_split[6])
+
+    tissues_list.pop(0)  # remove SMTS or SMTSD from list
+
+    group_counts = []
+
+    for tissue in tissues_list:
+        counts = []
+        for sample in sample_ids:
+            if samples_to_tissues_map.search(sample) == tissue:
+                counts.append(int(sample_to_count_map.search(sample)))
+        group_counts.append(counts)
 
     # ploting with data_viz.py module
     # code will output a list of lists containing gene data for tissue type,
@@ -223,7 +210,7 @@ def main():
     x_label = group_col_name
     y_label = "Gene read counts"
     data = group_counts
-    x_ticks = groups
+    x_ticks = tissues_list
 
     data_viz.boxplot(saved_plot_name, title, x_label, y_label, data, x_ticks)
 
